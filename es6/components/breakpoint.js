@@ -45,6 +45,11 @@ class Breakpoint extends Layer {
       if (v === null) return d.color;
       d.color = v + '';
     });
+
+    this.circleClass(function(d, v = null) {
+      if (v === null) return d.circleClass;
+      d.circleClass = v + '';
+    });
   }
 
   // creates a copy of the data ordered in time axis to draw the line
@@ -93,6 +98,11 @@ class Breakpoint extends Layer {
       if (this.data().length === 0) { path.remove(); }
     }
 
+    
+    var _circleClass = this.circleClass();
+    var circleClass = (d) => { return _circleClass(d) || ''; };
+
+
     // create points
     var sel = this.items.enter()
       .append('g')
@@ -103,6 +113,12 @@ class Breakpoint extends Layer {
 
     var exit = this.items.exit();
     exit.remove();
+
+    this.items
+      .each(function(d, i){
+        var elt = d3.select(this);
+        elt.classed(d.circleClass, true);
+      });
   }
 
   draw(el) {
@@ -148,6 +164,13 @@ class Breakpoint extends Layer {
       });
 
     if (!!this.each()) { el.each(this.each()); }
+
+    this.items
+      .each(function(d, i){
+        var elt = d3.select(this);
+        elt.classed(d.circleClass, true);
+      });
+
   }
 
   // logic performed to select an item from the brush
@@ -239,7 +262,7 @@ class Breakpoint extends Layer {
 
 // add data accessors
 accessors.getFunction(Breakpoint.prototype, [
-  'cx', 'cy', 'r', 'opacity', 'color'
+  'cx', 'cy', 'r', 'opacity', 'color', 'circleClass'
 ]);
 
 function factory() { return new Breakpoint(); }
