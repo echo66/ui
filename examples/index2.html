@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+		<title>Examples with WAVES.js</title>
+
+		<!--<script src="../waves.min.js"></script>-->
+		<script type="text/javascript" src="../waves-ui.min.js"></script>
+		<script type="text/javascript" src="track-ui.js"></script>
+		<script type="text/javascript" src="tracks-board-ui.js"></script>
+		<script type="text/javascript" src="./web-audio-automation-timeline/build/automation-timeline.js"></script>
+
+		<style type="text/css">
+			svg text {
+				font-family: monospace;
+				font-weight: bold;
+				font-size: 11px;
+			}
+
+			.selected {
+				stroke: black;
+				stroke-width: 3px;
+			}
+
+			#zoomer {
+				cursor: ns-resize;
+			}
+
+			.segment-item {
+				cursor: all-scroll;
+			}
+
+			.segment-item .handle {
+				cursor: ew-resize;
+			}
+
+			.movable-waveform-item .handle {
+				cursor: ew-resize;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="zoomer"></div>
+		<div id="cursor-control"></div>
+		<div id="minitimeline1"></div>
+		<div id="timeline1"></div>
+		<script type="text/javascript">
+			'use strict';
+
+			var context = new AudioContext();
+
+			// var filePath = 'drum-loop.wav';
+			var filePath = 'http://localhost/soundtouchjs/2.mp3';
+
+			var BPM = 120;
+			var beatPeriod = 60/BPM;
+			var numberOfBeats = 4 * 32 * 4;
+			var beatData = [];
+			for (var i=0; i<numberOfBeats; i++) 
+				beatData[i] = {
+					in_measure_index: (i+1)%5,
+					x: beatPeriod*i,
+					originalX: beatPeriod*i,
+					text: (i+1) % 5
+				};
+
+			var dddd = [];
+			for (var I=0; I<10; I++) {
+				dddd[I] = {
+					x: I, 
+					y: 50 * Math.random()
+				};
+			}
+
+			var segmentData = [
+				{
+					x: 0,
+					start: 0,
+					duration: 10,
+					bgColor: 'red',
+					width: 100, 
+					// height: 100, 
+					text: 'label 1',
+					waveform: dddd
+				}, 
+				// {
+				// 	start: 20,
+				// 	duration: 100,
+				// 	text: 'label 2'
+				// }
+			];
+			
+			var graph;
+			var segmentsLayer;
+			var labelsLayer;
+
+			
+		</script>
+
+		<script type="text/javascript" src="demo2.js"></script>
+	</body>
+
+</html>
