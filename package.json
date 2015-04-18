@@ -1,4 +1,21 @@
 {
+  "transpileThis": [
+    {"file": "es6/core/layer.js", "transpile": true}, 
+    {"file": "es6/helpers/lib/observe.js", "transpile": true}, 
+    {"file": "es6/components/lib/resampler-worker.js", "transpile": true}, 
+    {"file": "es6/helpers/zoomer.js", "transpile": true}, 
+    {"file": "es6/core/timeline.js", "transpile": true}, 
+    {"file": "es6/helpers/lib/ui-loop.js", "transpile": true}, 
+    {"file": "es6/helpers/utils.js", "transpile": true}, 
+    {"file": "es6/components/lib/resampler.js", "transpile": true}, 
+    {"file": "es6/components/lib/rendering-strategies.js", "transpile": true}, 
+    {"file": "es6/components/breakpoint.js", "transpile": true}, 
+    {"file": "es6/components/marker.js", "transpile": true}, 
+    {"file": "es6/components/label.js", "transpile": true}, 
+    {"file": "es6/components/waveform.js", "transpile": true}, 
+    {"file": "es6/components/movable-waveform.js", "transpile": true}, 
+    {"file": "es6/components/segment.js", "transpile": true}
+  ],
   "name": "waves-ui",
   "version": "0.3.0",
   "description": "'UI section of the wavesjs library'",
@@ -30,7 +47,9 @@
     "babel-runtime": "4.7.6",
     "d3": "^3.5.5",
     "shortid": "^2.1.3",
-    "underscore.string": "^3.0.3"
+    "underscore.string": "^3.0.3",
+    "waves": "git://github.com/wavesjs/waves",
+    "waves-ui": "git://github.com/wavesjs/ui"
   },
   "devDependencies": {
     "babel": "^4.5.0",

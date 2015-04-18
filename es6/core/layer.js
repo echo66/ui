@@ -92,6 +92,7 @@ class Layer extends EventEmitter {
     };
 
     this.onMouseDown = this.onMouseDown.bind(this);
+    this.onMouseUp = this.onMouseUp.bind(this);
     this.onDrag = this.onDrag.bind(this);
   }
 
@@ -151,12 +152,35 @@ class Layer extends EventEmitter {
 
     if (interactions.selectable) {
       this.base.on('mousedown', this.onMouseDown);
+      this.base.on('mouseup', this.onMouseUp);
     }
   }
 
   undelegateEvents() {
     this.base.removeListener('mousedown', this.onMouseDown);
+    this.base.removeListener('mouseup', this.onMouseUp);
     this.base.removeListener('drag', this.onDrag);
+  }
+
+  onMouseUp(e) {
+    if (e.button !== 0) { return; }
+    // check if the clicked item belongs to the layer
+    // should find something more reliable - closest `.item` group ?
+    var item = e.target.parentNode;
+    // clicked item doesn't belong to this layer
+    if (this.items[0].indexOf(item) === -1) {
+      item = null;
+    }
+
+    if (item) {
+      if (item.dataset.lastEvent=='drag') {
+        this.emit('drag-end', item, e);
+      } else {
+        this.emit('mouseup', item, e);
+      }
+      item.dataset.lastEvent = undefined;
+    }
+    
   }
 
   onMouseDown(e) {
@@ -168,6 +192,9 @@ class Layer extends EventEmitter {
     if (this.items[0].indexOf(item) === -1) {
       item = null;
     }
+
+    if (item)
+      item.dataset.lastEvent = 'mousedown';
 
     this.handleSelection(item, e);
     // var datum = this.d3.select(item).datum();
@@ -184,7 +211,15 @@ class Layer extends EventEmitter {
 
     this.handleDrag(item, e);
     // var datum = this.d3.select(item).datum();
-    this.emit('drag', item, e);
+    
+    if (item) {
+      if (item.dataset.lastEvent == 'mousedown')
+        this.emit('drag-start', item, e);
+      else if (item.dataset.lastEvent == 'drag')
+        this.emit('drag', item, e);
+      item.dataset.lastEvent = 'drag';
+    }
+
   }
 
   // @TODO: `handleSelection` and `handleDrag` could be getters/setters
@@ -210,6 +245,8 @@ class Layer extends EventEmitter {
   }
 
   select(...els) {
+    var that = this;
+
     els = (els.length === 0) ?
       this.items :
       this.d3.selectAll(els);
@@ -217,16 +254,23 @@ class Layer extends EventEmitter {
     els.classed(this.param('selectedClass'), true);
 
     els.each(function() {
+      that.emit('select', this);
       toFront(this);
     });
   }
 
   unselect(...els) {
+    var that = this;
+
     els = (els.length === 0) ?
       this.items :
       this.d3.selectAll(els);
 
     els.classed(this.param('selectedClass'), false);
+
+    els.each(function() {
+      that.emit('unselect', this);
+    });
   }
 
   style(selector, rules) {

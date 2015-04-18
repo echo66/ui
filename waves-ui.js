@@ -10,6 +10,7 @@ var UI = {
   marker: require('./dist/components/marker'),
   segment: require('./dist/components/segment'),
   waveform: require('./dist/components/waveform'),
+  //movableWaveform: require('./dist/components/movable-waveform'),
   // utils
   zoomer: require('./dist/helpers/zoomer'),
   utils: require('./dist/helpers/utils'),
