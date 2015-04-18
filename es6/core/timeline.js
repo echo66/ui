@@ -84,6 +84,8 @@ class Timeline extends EventEmitter {
     // add the layer to the stack
     this.layers[layer.param('cname')] = layer;
 
+    this.emit("new-layer", layer);
+
     return this;
   }
 
@@ -95,6 +97,8 @@ class Timeline extends EventEmitter {
 
     layer.g.remove();
     delete this.layers[layer.param('cname')];
+
+    this.emit("removed-layer");
 
     return this;
   }

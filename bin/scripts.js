@@ -120,6 +120,11 @@ function transpileAll() {
 
     fileList.forEach(function(file) {
       if (!file) { return; }
+      for (var i=0; i<pkg.transpileThis.length; i++) {
+        var obj = pkg.transpileThis[i];
+        if (obj.file==file && !obj.transpile)
+          return;
+      }
       transpile(file);
     });
   });
