@@ -111,14 +111,36 @@ class Timeline extends EventEmitter {
     // !!! remember to unbind when deleting element !!!
     var body = document.body;
     var target;
+    var that = this;
+
     // is actually not listened in make editable
     this.svg.on('mousedown', () => {
       target = d3.event.target;
-      this.trigger('mousedown', d3.event);
+      var originalEvent = d3.event;
+      d3.select(d3.event.target).each( (datum) => {
+        var e = {
+          target: target,
+          d: datum,
+          originalEvent: originalEvent
+        };
+        that.trigger('mousedown', e);
+      });
     });
 
     this.svg.on('mouseup', () => {
-      this.trigger('mouseup', d3.event);
+      var originalEvent = d3.event;
+      d3.select(d3.event.target).each( (datum) => {
+        var e = {
+          target: target,
+          d: datum,
+          originalEvent: originalEvent
+        };
+        that.trigger('mouseup', e);
+      });
+    });
+
+    this.svg.on('mouseenter', () => {
+      this.trigger('mouseenter', d3.event);
     });
 
     this.svg.on('mousemove', throttle(() => {
@@ -142,7 +164,6 @@ class Timeline extends EventEmitter {
       this.trigger('mouseleave', e);
     });
 
-    var that = this;
     // @NOTE: how removeListeners for drag behavior
     var dragBehavior = d3.behavior.drag();
     // dragBehavior.on('dragstart', function() {

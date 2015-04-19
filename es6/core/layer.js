@@ -153,6 +153,10 @@ class Layer extends EventEmitter {
     if (interactions.selectable) {
       this.base.on('mousedown', this.onMouseDown);
       this.base.on('mouseup', this.onMouseUp);
+      // this.base.on('mouseenter', function(e) { 
+      //   console.log('mouseenter'); 
+      //   console.log(e);
+      // });
     }
   }
 
@@ -163,7 +167,7 @@ class Layer extends EventEmitter {
   }
 
   onMouseUp(e) {
-    if (e.button !== 0) { return; }
+    if (e.originalEvent.button !== 0) { return; }
     // check if the clicked item belongs to the layer
     // should find something more reliable - closest `.item` group ?
     var item = e.target.parentNode;
@@ -175,16 +179,18 @@ class Layer extends EventEmitter {
     if (item) {
       if (item.dataset.lastEvent=='drag') {
         this.emit('drag-end', item, e);
-      } else {
+      } else if (item.dataset.lastEvent=='mousedown') {
         this.emit('mouseup', item, e);
       }
       item.dataset.lastEvent = undefined;
+    } else {
+      this.emit('mouseup', item, e);
     }
     
   }
 
   onMouseDown(e) {
-    if (e.button !== 0) { return; }
+    if (e.originalEvent.button !== 0) { return; }
     // check if the clicked item belongs to the layer
     // should find something more reliable - closest `.item` group ?
     var item = e.target.parentNode;
