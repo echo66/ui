@@ -172,7 +172,7 @@ class Layer extends EventEmitter {
     // should find something more reliable - closest `.item` group ?
     var item = e.target.parentNode;
     // clicked item doesn't belong to this layer
-    if (this.items[0].indexOf(item) === -1) {
+    if (this.items && this.items[0].indexOf(item) === -1) {
       item = null;
     }
 
@@ -195,7 +195,7 @@ class Layer extends EventEmitter {
     // should find something more reliable - closest `.item` group ?
     var item = e.target.parentNode;
     // clicked item doesn't belong to this layer
-    if (this.items[0].indexOf(item) === -1) {
+    if (this.items && this.items[0].indexOf(item) === -1) {
       item = null;
     }
 
@@ -211,7 +211,7 @@ class Layer extends EventEmitter {
     // if (this.base.brushing()) { return; }
     var item = e.currentTarget;
 
-    if (this.items[0].indexOf(item) === -1) {
+    if (this.items && this.items[0].indexOf(item) === -1) {
       item = null;
     }
 
@@ -255,7 +255,7 @@ class Layer extends EventEmitter {
 
     els = (els.length === 0) ?
       this.items :
-      this.d3.selectAll(els);
+      this.d3.selectAll(els); 
 
     els.classed(this.param('selectedClass'), true);
 
@@ -271,6 +271,9 @@ class Layer extends EventEmitter {
     els = (els.length === 0) ?
       this.items :
       this.d3.selectAll(els);
+
+    if (els==undefined)
+      return;
 
     els.classed(this.param('selectedClass'), false);
 

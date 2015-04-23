@@ -98,6 +98,7 @@ class Timeline extends EventEmitter {
     layer.g.remove();
     delete this.layers[layer.param('cname')];
 
+    // TODO: I should add some additional info in the event.
     this.emit("removed-layer");
 
     return this;
@@ -399,6 +400,29 @@ class Timeline extends EventEmitter {
         this.DOMReady = true;
       }
     });
+  }
+
+  focus(layer) {
+    for (var lid in this.layers) {
+      this.layers[lid].focus = false;
+      this.layers[lid].undelegateEvents()
+      if (this.layers[lid]==layer) {
+        this.layers[lid].focus = true;
+        this.layers[lid].delegateEvents();
+      }
+    }
+  }
+
+  getFocusedLayer() {
+    for (var lid in this.layers) {
+      if (this.layers[lid].focus)
+        return this.layers[lid];
+    }
+  }
+
+  resetFocus() {
+    for (var lid in this.layers) 
+      this.layers[lid].delegateEvents()
   }
 
   // destroy the timeline
