@@ -59,6 +59,9 @@ class Waveform extends Layer {
     var data = this.data();
     data = data instanceof ArrayBuffer ? new Float32Array(data) : data;
     var duration = data.length / sampleRate;
+    // console.log("-------------------------------------------------------------");
+    // console.info("Duration of the waveform: " + duration + " seconds.");
+    // console.log("-------------------------------------------------------------");
     // bind rendering strategy
     var strategy = renderingStrategies[this.param('renderingStrategy')];
     this._update = strategy.update.bind(this);
@@ -93,11 +96,15 @@ class Waveform extends Layer {
   downSample() {
     var data = this.data();
     var buffer = data instanceof ArrayBuffer ? new Float32Array(data) : data;
+    // console.log("------------------------------");
+    // console.info("waveform::downSample");
+    // console.info("from original size: "+buffer.length);
 
     var snapshotWindowSize = 256;
     if (!this.__snapshot256) {
       this.__snapshot256 = createSnapshot(buffer, snapshotWindowSize);
     }
+    // console.info("to snapshot size: "+this.__snapshot256.length);
 
     // width should be computed this way
     // what about having multiple sounds on the same track ?
@@ -110,6 +117,7 @@ class Waveform extends Layer {
       var timelineTimeStart = this.base.xScale.invert(pixel);
       extractAtTimes.push(timelineTimeStart);
     }
+    // console.info("extractAtTimes.length: "+extractAtTimes.length);
 
     // define center of the y domain for default values
     var yDomain = this.yScale.domain(); // not this
@@ -140,17 +148,17 @@ class Waveform extends Layer {
       buffer = buffer;
       downSampledAt = 1;
     }
+    // console.log("------------------------------");
+    var downSampledView = minMax(
+      buffer,
+      extractAtTimes,
+      sampleRate,
+      windowSize,
+      defaultValue,
+      downSampledAt
+    );
 
-      var downSampledView = minMax(
-        buffer,
-        extractAtTimes,
-        sampleRate,
-        windowSize,
-        defaultValue,
-        downSampledAt
-      );
-
-      this.setDownSample(downSampledView);
+    this.setDownSample(downSampledView);
     // }
   }
 
@@ -171,6 +179,12 @@ class Waveform extends Layer {
 
   // cache the down sampling result and create some scale
   setDownSample(data) {
+    // console.log("-------------------------------------------");
+    // console.info("waveform::setDownSample");
+    // // console.info(data);
+    // console.info([0, data.length]);
+    // console.info(this.base.xScale.domain());
+    // console.log("-------------------------------------------");
     // update xxScale according to new base.xScale.domain and data.length
     this.xxScale
       .domain([0, data.length])

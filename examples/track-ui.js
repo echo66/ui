@@ -61,32 +61,32 @@ function TrackUI() {
 	var showMiniTimeLine  = false;
 
 	var listeners = {
-		'track:set-time-domain' : {},
-		'track:set-current-time' : {},
+		'track:set-time-domain' : {}, // data: {newDomain, oldDomain}
+		'track:set-current-time' : {}, // data: {newTime, oldTime}
 		'track:click' : {},
 
-		'track:layer:set-visibility' : {},
-		'track:layer:add' : {},
+		'track:layer:set-visibility' : {}, // data: {visible}
+		'track:layer:add' : {}, // data: {layerData}
 		'track:layer:update' : {}, 
-		'track:layer:delete' : {},
+		'track:layer:delete' : {}, // data: {layerId}
 		'track:layer:mousedown' : {},
 		'track:layer:mouseup' : {},
 
-		'track:layer:element:add' : {},
-		'track:layer:element:update' : {}, 
-		'track:layer:element:delete' : {},
-		'track:layer:element:mousedown' : {},
-		'track:layer:element:mouseup' : {},
-		'track:layer:element:drag-start': {},
-		'track:layer:element:drag': {},
-		'track:layer:element:drag-end': {},
+		'track:element:add' : {}, // data: {visible}
+		'track:element:update' : {}, 
+		'track:element:delete' : {},
+		'track:element:mousedown' : {},
+		'track:element:mouseup' : {},
+		'track:element:drag-start': {},
+		'track:element:drag': {},
+		'track:element:drag-end': {},
 	};
 
 	var _;
 
 	/**
-	 * params: id, type, initialTimeDomain, width, height, 
-	 *          beatGrid, segments, parentContainerId
+	 * params: id, type, initialTimeDomain (opt), width (opt), height (opt), 
+	 *          beatGrid, segments (opt), parentContainerId (opt)
 	 */
 	this.init = function (params) {
 
@@ -101,6 +101,7 @@ function TrackUI() {
 		_.mainTimelineContainerId = _.type + "-" + _.id + "-mainTimeline";
 		_.miniTimelineContainerId = _.type + "-" + _.id + "-miniTimeline";
 		_.timeRulerContainerId    = _.type + "-" + _.id + "-timeRuler";
+		_.additionalContainerId   = _.mainTimelineContainerId + "-additional-container";
 
 
 		// Create the timeline
@@ -125,8 +126,8 @@ function TrackUI() {
 		beatGridLayer = create_markers_layer_object({
 			displayHandle: false, editable: false, selectable: false, 
 			data: [], 
-			color: function(d, v) { if (d.in_measure_index == 0) return "black"; else return defaults.colors.beat; }, 
-			height: function(d, v) { if (d.in_measure_index == 0) return 100; else return 50; },
+			color: function(d, v) { return defaults.colors.beat; }, 
+			height: function(d, v) { return _.height; },
 			id: "beat-grid-layer"
 		});
 
@@ -152,13 +153,15 @@ function TrackUI() {
 		var selection;
 		if (_.parentContainerId)
 			selection = d3.select('#'+_.parentContainerId);
-		else
-			selection = d3.select('body').append('div').attr('id', "track-"+_.id);
+		else {
+			parentContainerId = "track-"+_.id;
+			selection = d3.select('body').append('div').attr('id', parentContainerId);
+		}
 
 		selection.append('div').attr('id', _.timeRulerContainerId);
 		selection.append('div').attr('id', _.miniTimelineContainerId);
+		selection.append('div').attr('id', _.additionalContainerId);
 		selection.append('div').attr('id', _.mainTimelineContainerId);
-		selection.append('div').attr('id', _.mainTimelineContainerId + "-additional-container");
 
 		d3.select("#"+_.mainTimelineContainerId).call(timeline.draw);
 
@@ -250,35 +253,7 @@ function TrackUI() {
 		});
 
 		layer.on('mousedown', function(domElement, mouseEvent) {
-			console.log("mousedown");
-			console.log(arguments);
-			// ADD NEW SEGMENT
-			if (mouseEvent.originalEvent.ctrlKey && !domElement) {
-				var beatGrid = beatGridLayer.__data;
-				// var time = timeline.xScale.invert(mouseEvent.clientX);
-				var time = timeline.xScale.invert(d3.mouse(this.g[0][0])[0]);
-				var intervalData = get_closest_values(beatGrid, time, function (i, grid) {
-
-						if (_.get_snap_mode()=="per-measure" && grid[i].in_measure_index!=0)
-							return false;
-						else
-							return true;
-					});
-				// console.log(intervalData.values);
-				var start = intervalData.values[0];
-				var end = intervalData.values[1];
-				var duration = end - start;
-				var color = random_color_v2();
-				var obj = {
-					start: start,
-					duration: duration,
-					color: color,
-					text: ""+Math.random(),
-					marginTop: Math.random()*(_.height-5-2)
-				};
-				_.add_segment(obj);
-				_.emit('track:layer:element:add', {input:obj});
-			}
+			_.emit('track:layer:mousedown', {g: this.g, track: _, domElement: domElement, mouseEvent: mouseEvent});
 		});
 
 		layer.on('drag-start', function(domElement, mouseEvent) {
@@ -344,14 +319,6 @@ function TrackUI() {
 			timeRulerUI.call(timeRulerAxis);
 		}
 	}
-
-	
-
-	this.show_segment_info = function() {
-		// TODO
-	}
-
-
     
 
 	this.add_waveform = function(buffers) {
@@ -556,19 +523,43 @@ function TrackUI() {
 	 * -----------------GETTERS-------------------
 	 * -------------------------------------------
 	 */
+	this.get_element_from_layer = function(type, layerId, elId) {
+		var data = layersCollections[type][layerId].__data;
+		for (var i in data)
+			if (data[i].id == elId)
+				return data[i];
+	}
 
 	this.get_elements_from_layer = function (type, layerId) {
 		return layersCollections[type][layerId].__data;
 	}
 
-	this.get_layers_ids = function (type, layerId) {
-		// TODO
+	this.get_layers_ids = function (type) {
+		var ids = [];
+		for (var layerId in layersCollections[type]) {
+			if (layerId != 'default')
+			ids.splice(ids.length, 0, layerId);
+		}
+		return ids;
 	}
 
-	this.get_custom_data_from_layer = function(type, layerId, key, value) {
-		// TODO
+	this.layer_data = function(type, layerId, key, value) {
+		if (arguments.length == 3)
+			return layersCollections[type][layerId].layerData[key];
+		else
+			layersCollections[type][layerId].layerData[key] = value;
 	}
 
+	this.track_data = function(key, value) {
+		if (!_.trackData)
+			_.trackData = {};
+		if (arguments.length == 3)
+			return _.trackData[key];
+		else
+			_.trackData[key] = value;
+	}
+
+	/*
 	this.get_segments = function (ids) {
 		var segmentsToReturn = [];
 		if (!ids) {
@@ -585,14 +576,15 @@ function TrackUI() {
 			// TODO
 		}
 	}
+	*/
 
 	this.get_current_time = function() { return cursor.__data[0].time; }
 
-	this.get_id = function() { return id; }
+	this.get_id = function() { return _.id; }
 
-	this.get_type = function() { return type; }
+	this.get_type = function() { return _.type; }
 
-	this.get_snap_mode = function() { return snap_mode; }
+	this.get_snap_mode = function() { return _.snap_mode; }
 
 	// JUST FOR DEBUGGING
 	this.get_timeline = function() { return timeline; }
@@ -625,7 +617,7 @@ function TrackUI() {
 	this.add_event_listener = function(eventType, callback) {
 		var Ls = listeners[eventType];
 		Ls[callback] = callback;
-		Ls[callback].bind(this);
+		Ls[callback].bind(_);
 	}
 
 	// EVENT LISTENER METHOD
@@ -795,13 +787,22 @@ function TrackUI() {
 					editable:true
 				}
 			})
-			.data(params.data.map(function(v, i, a){
-				return {
-					cx: v.time,
-					cy: v.value,
-					r: v.radius || 5
-				}	
-			}))
+			.data(params.data)
+			.cx(function(d, v) {
+				console.log([d,v]);
+				if (!v) return +d.time;
+     			d.time = (+v);
+			})
+			.cy(function(d, v) {
+				console.log([d,v]);
+				if (!v) return +d.value;
+     			d.value = (+v);
+			})
+			.r(function(d, v) {
+				console.log([d,v]);
+				if (!v) return +d.radius;
+      			d.radius = (+v);
+			})
 			.color(params.color)
 			.param('name', params.id);
 			
@@ -870,6 +871,7 @@ function TrackUI() {
 			layersCollections['labels'][id] = newLayers.labelsLayer;
 			timeline.add(layersCollections['segments'][id]);
 			timeline.add(layersCollections['labels'][id]);
+			layersCollections['segments'][id].layerData = {};
 			_.focus_interactions_on_layer(params.id, "segments");
 			_.emit('track:layer:add', {id:id, type:type});
 
@@ -884,7 +886,9 @@ function TrackUI() {
 				color: params.color || random_color_v2(), 
 				height: params.height || defaults.height
 			});
+			layersCollections['markers'][id] = newLayer;
 			timeline.add(newLayer);
+			newLayer.layerData = {};
 			_.focus_interactions_on_layer(params.id, "markers");
 			_.emit('track:layer:add', {id:id, type:type});
 
@@ -896,12 +900,15 @@ function TrackUI() {
 				color: params.color || random_color_v2(),
 				data: params.data || []
 			});
+			layersCollections['automation'][id] = newLayer;
 			timeline.add(newLayer);
+			newLayer.layerData = {};
 			_.focus_interactions_on_layer(params.id, "automation");
 			_.emit('track:layer:add', {id:id, type:type});
 
 		} else if (type=='waveform') {
 			// TODO
+
 			_.focus_interactions_on_layer(params.id, "waveform");
 			_.emit('track:layer:add', {id:id, type:type});
 		}
@@ -967,6 +974,8 @@ function TrackUI() {
 		if (layersCollections['labels'][params.layerId]) { add_label(params); }
 
 		timeline.update(layer);
+
+		_.emit('track:element:add', {obj: params});
 	}
 
 	// params: layerId (opt), id, time, value, radius
@@ -985,6 +994,8 @@ function TrackUI() {
 		if (layersCollections['labels'][params.layerId]) { add_label(params); }
 
 		timeline.update(layer);
+
+		_.emit('track:element:add', {obj: params});
 	}
 
 	// params: layerId (opt), id, start, duration, text, color (opt)
@@ -1006,6 +1017,8 @@ function TrackUI() {
 		// if (layersCollections['labels'][params.layerId]) { add_label(params); }
 		
 		timeline.draw(layer.g);
+
+		_.emit('track:element:add', {obj: params});
 	}
 
 	// params: layerId (opt), id, text
@@ -1027,9 +1040,10 @@ function TrackUI() {
 	this.remove_element_from_layer = function(params) {
 		params.layerId = (params.layerId)? params.layerId : 'default';
 		var type = params.type;
+		var id = params.id
 		var layer;
 		var L;
-		if (type=='segment') 
+		if (type=='segments') 
 			layer = layersCollections['segments'][params.layerId];
 		else if (type=='markers') 
 			layer = layersCollections['markers'][params.layerId];
@@ -1037,15 +1051,20 @@ function TrackUI() {
 			layer = layersCollections['automation'][params.layerId];
 		else if (type=='waveform') 
 			layer = waveformLayers[params.layerId];
-		
 
 		var layerD = layer.__data;
+		L = layerD.length;
 
-		for (var i=0; i<L; i++)
-			if (layerData[i].id==id)
-				layerData.splice(i,1);
+		for (var i=0; i<L; i++) {
+			// console.log(layerD[i]);
+			if (layerD[i] && layerD[i].id==id)
+				layerD.splice(i,1);
+		}
+			
 
 		timeline.update(layer);
+
+		_.emit('track:element:add', {id: id, type: type, layerId: params.layerId});
 	}
 
 
@@ -1069,5 +1088,55 @@ function TrackUI() {
 
 	this.reset_focus = function() {
 		timeline.resetFocus();
+	}
+
+	// JUST A CHEAP ASS HACK
+	this.set_layer_data = function(type, layerId, data) {
+		layersCollections[type][layerId].__data = data
+	}
+
+	// JUST A CHEAP ASS HACK
+	this.refresh_layer = function(type, layerId) {
+		timeline.update(layersCollections[type][layerId]);
+	}
+
+	this.destroy = function() {
+		for (var i in timeline.layers) {
+			timeline.remove(timeline.layers[i]);
+		}
+		miniTimeline.remove(scrollSegment);
+
+		id = undefined; type = undefined;
+		height = undefined; width = undefined;
+
+		parentContainerId = undefined;
+		mainTimelineContainerId = undefined;
+		miniTimelineContainerId = undefined;
+		timeRulerContainerId = undefined;
+		additionalContainerId = undefined;
+
+		defaults = undefined; layersCollections = undefined;
+
+		cursor = undefined; timeline = undefined;
+		beatGridLayer = undefined; segmentsLayer = undefined;
+		labelsLayer = undefined; waveformLayer = undefined;		
+
+		miniTimeline = undefined; scrollSegment = undefined;
+		timeRulerAxis = undefined; timeRulerUIParentContainer = undefined;
+		timeRulerUI = undefined; listeners = undefined; _ = undefined;
+
+		follow = undefined; snap = undefined; snap_mode = undefined;
+
+		counter = undefined; showTimeRuler = undefined; showMiniTimeLine = undefined;
+
+		
+	}
+
+
+	this.get_additional_container_id = function() { return _.additionalContainerId; }
+
+	//ANOTHER HACK
+	this.get_time_of_event = function(g) {
+		return timeline.xScale.invert(d3.mouse(g[0][0])[0]);
 	}
 }

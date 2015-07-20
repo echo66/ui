@@ -67,6 +67,11 @@ class Label extends Layer {
     });
 
     this.margin({ top: 0, right: 0, bottom: 0, left: 0 });
+
+    this.marginTop(function(d, v = null) {
+      if (v === null) { return d.marginTop || 2; }
+      d.marginTop = v;
+    });
   }
 
   xZoom(factor) {
@@ -110,6 +115,8 @@ class Label extends Layer {
     var _verticalAlignment = this.params().verticalAlignment;
     var minDomain = _xScale.domain()[0];
 
+    var _marginTop = this.marginTop();
+
     // scales for bounding box position
     var w = (d) => {
       var width = _xScale(minDomain + _w(d));
@@ -121,6 +128,7 @@ class Label extends Layer {
     };
 
     var h = (d) => {
+      // console.log([d, _yScale, _h, _h(d), _yScale(_h(d)), this.param('height')]);
       return (this.param('height') - _yScale(_h(d))) || this.param('height');
     };
 
@@ -167,7 +175,8 @@ class Label extends Layer {
       var ret;
       switch (_valign(d)) {
         case 'top':
-          ret = y(d) + parseInt(_margin().top, 10);
+          // ret = y(d) + parseInt(_margin().top, 10);
+          ret = y(d) + parseInt(_marginTop(d), 10);
           break;
         case 'middle':
           ret = y(d) + (h(d) / 2);
@@ -220,7 +229,7 @@ class Label extends Layer {
 accessors.getFunction(Label.prototype,[
   'x', 'y', 'width', 'height', 'text',
   'color', 'align', 'valign', 'margin',
-  'sortIndex', 'bgColor'
+  'sortIndex', 'bgColor', 'marginTop'
 ]);
 
 function factory() { return new Label(); }

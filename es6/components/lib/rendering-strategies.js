@@ -55,6 +55,8 @@ var renderingStrategies = {
       if (this.path) { return; }
       var color = this.color();
 
+      // console.log("update waveform");
+
       this.path = this.g
         .append('path')
         .classed('item', true)
@@ -71,14 +73,17 @@ var renderingStrategies = {
 
       var xRange = this.base.xScale.range();
       var currentX;
+      var duration = this.xxScale.domain()[1];
 
       this.area = d3.svg.area()
-        .defined(function(d, i) {
+        .defined((d, i) => {
           currentX = _x(i);
+          // console.log(data.length + " " + currentX + " " + duration + " " + xRange[0] + " " + xRange[1]);
           return (currentX >= xRange[0] && currentX <= xRange[1]);
         })
         .x((d, i) => { return currentX; })
         .y0((d, i) => { return i % 2 === 0 ? _y(data[i]) : _y(data[i - 1]); })
+        // .y0((d, i) => { return 50; })
         .y1((d, i) => { return i % 2 === 0 ? _y(data[i + 1]) : _y(data[i]); });
 
       var color = this.color();

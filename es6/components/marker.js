@@ -24,6 +24,11 @@ class Marker extends Layer {
       if (v === null) { return d.x; }
       d.x = parseFloat(v, 10);
     });
+
+    this.height(function(d, v = null) {
+      if (v === null) { return d.height; }
+      d.height = v;
+    });
   }
 
   xZoom() {
@@ -56,9 +61,10 @@ class Marker extends Layer {
     var x = xScale(xAccessor(datum));
     var targetX = x + dx;
 
-    if (targetX >= xRange[0] && targetX <= xRange[1]) {
-      x = targetX;
-    }
+    // if (targetX >= xRange[0] && targetX <= xRange[1]) {
+    //   x = targetX;
+    // }
+    x = targetX;
 
     xAccessor(datum, xScale.invert(x));
     // redraw element
@@ -80,6 +86,8 @@ class Marker extends Layer {
     var handleHeight = 8;
     var y = this.param('displayHandle') ? handleHeight : 0;
 
+    var heightAccessor = this.height();
+
     sel.append('line')
       .style('stroke-width', this.width())
       .style('stroke', this.color())
@@ -87,7 +95,8 @@ class Marker extends Layer {
       .attr('x1', 0)
       .attr('x2', 0)
       .attr('y1', y)
-      .attr('y2', this.param('height'));
+      // .attr('y2', this.param('height'));
+      .attr('y2', heightAccessor);
 
     if (this.param('displayHandle')) {
       var area = this.d3.svg.area()
@@ -118,7 +127,7 @@ class Marker extends Layer {
 }
 
 accessors.getFunction(Marker.prototype,
-  ['color', 'opacity', 'width', 'x']
+  ['color', 'opacity', 'width', 'x', 'height']
 );
 
 function factory() { return new Marker(); }

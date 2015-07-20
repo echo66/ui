@@ -1,0 +1,26 @@
+svg text {
+	font-family: monospace;
+	font-weight: bold;
+	font-size: 11px;
+}
+
+.selected {
+	stroke: black;
+	stroke-width: 3px;
+}
+
+#zoomer {
+	cursor: ns-resize;
+}
+
+.segment-item {
+	cursor: all-scroll;
+}
+
+.segment-item .handle {
+	cursor: ew-resize;
+}
+
+.movable-waveform-item .handle {
+	cursor: ew-resize;
+}

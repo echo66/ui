@@ -20,17 +20,17 @@ class Segment extends Layer {
 
     // initialize data accessors
     this.y(function(d, v = null) {
-      if (v === null) return +d.y || 0;
+      if (v === null) return +d.y || 0;
       d.y = (+v);
     });
 
     this.height(function(d, v = null) {
-      if (v === null) return +d.height || 1;
+      if (v === null) return +d.height || 1;
       d.height = (+v);
     });
 
     this.duration(function(d, v = null) {
-      if (v === null) return +d.duration || 1;
+      if (v === null) return +d.duration || 1;
       d.duration = (+v);
     });
 
@@ -78,7 +78,7 @@ class Segment extends Layer {
     var y = (d) => { return height - h(d) - yScale(_y(d)); };
 
     var color = (d) => { return _color(d); };
-    var opacity = (d) => { return (_opacity(d) || this.param('opacity')); };
+    var opacity = (d) => { return (_opacity(d) || this.param('opacity')); };
 
     var _handlerWidth = parseInt(this.param('handlerWidth'), 10);
     var _halfHandler = _handlerWidth * 0.5;
@@ -259,12 +259,21 @@ class Segment extends Layer {
 
     // handle x position - lock to boundaries
     var targetX = x + dx;
+    /*
     if (targetX >= xRange[0] && (targetX + w) <= xRange[1]) {
       x = targetX;
     } else if (targetX < xRange[0]) {
       x = xRange[0];
     } else if ((targetX + w) > xRange[1]) {
       x = xRange[1] - w;
+    }
+    */
+    if (targetX >= xRange[0] && (targetX + w) <= xRange[1]) {
+      x = targetX;
+    } else if (targetX < xRange[0]) {
+      x = xRange[0];
+    } else if ((targetX + w) > xRange[1]) {
+      x = targetX;
     }
 
     // handle y position - lock to boundaries

@@ -1,8 +1,6 @@
 function TracksBoardUI() {
 
-	// var Timeline     = wavesUI.timeline;
-	var SegmentLayer = wavesUI.segment;
-	var d3 			 = wavesUI.timeline.d3;
+	var d3 = wavesUI.timeline.d3;
 
 	var timeline;
 
@@ -12,8 +10,13 @@ function TracksBoardUI() {
 	var timeRulerUIParentContainer;
 	var timeRulerUI;
 
-	var masterContainerId;
+	var id;
+	var type; 
 	var beatGrid;
+	var parentContainerId;
+	var tracksContainerId;
+	var miniTimelineContainerId;
+	var timeRulerContainerId;
 
 	var width;
 	var height;
@@ -22,34 +25,44 @@ function TracksBoardUI() {
 
 	var listeners = {};
 
-	var defaultListeners = {};
-
 	var _;
-	
+
+	this.get_id = function() { return _.id; }
+
+	this.get_type = function() { return _.type; }
+
+	// params: id, type, beatGrid, initialTimeDomain, width, height, parentContainerId
 	this.init = function (params) {
 
+		_ = this;
+
 		listeners = {
-			'board:set_current_time': {},
+			'board:set-current-time': {},
+			'board:set-time-domain': {},
 			'board:track:add': {},
 			'board:track:delete': {},
-			'board:track:segment:add': {},
-			'board:track:segment:update': {},
-			'board:track:segment:remove': {},
-			'board:track:segment:drag_start': {},
-			'board:track:segment:drag': {},
-			'board:track:segment:drag_end': {},
 		}
 
-		defaultListeners = {
-			'board:track:segment:add': function(data) { _.emit('board:track:segment:add', data); },
-			'board:track:segment:update': function(data) { _.emit('board:track:segment:update', data); },
-			'board:track:segment:remove': function(data) { _.emit('board:track:segment:remove', data); },
-			'board:track:segment:drag_start': function(data) { _.emit('board:track:segment:drag_start', data); },
-			'board:track:segment:drag': function(data) { _.emit('board:track:segment:drag', data); },
-			'board:track:segment:drag_end': function(data) { _.emit('board:track:segment:drag_end', data); },
-		}
+		id = params.id;
+		type = params.type;
 
-		masterContainerId = params.id;
+		tracksContainerId       = get_tracks_container_id(id, type);
+		miniTimelineContainerId = get_mini_timeline_container_id(id, type);
+		timeRulerContainerId    = get_time_ruler_container_id(id, type);
+		parentContainerId       = params.parentContainerId;
+
+		var selection;
+		if (parentContainerId)
+			selection = d3.select('#'+parentContainerId);
+		else {
+			parentContainerId = get_id_prefix(id, type)
+			selection = d3.select('body').append('div').attr('id', parentContainerId);
+		}
+			
+
+		selection.append('div').attr('id', miniTimelineContainerId);
+		selection.append('div').attr('id', timeRulerContainerId);
+		selection.append('div').attr('id', tracksContainerId);
 
 		beatGrid =params.beatGrid;
 
@@ -62,12 +75,12 @@ function TracksBoardUI() {
 		_ = this;
 
 		timeline = new wavesUI.timeline().xDomain(initialTimeDomain).width(width).height(height);
-		var aux = new SegmentLayer().params({}).data([]);
+		var aux = new wavesUI.segment().params({}).data([]);
 		timeline.add(aux);
 
-		create_mini_timeline(params.miniContainerId, width, 15, initialTimeDomain);
+		create_mini_timeline(miniTimelineContainerId, width, 15, initialTimeDomain);
 
-		create_time_ruler(params.timeRulerContainerId, width, 15, initialTimeDomain);
+		create_time_ruler(timeRulerContainerId, width, 15, initialTimeDomain);
 	}
 
 
@@ -77,7 +90,7 @@ function TracksBoardUI() {
 			.width(width)
 			.height(height);
 
-		scrollSegment = new SegmentLayer()
+		scrollSegment = new wavesUI.segment()
 			.params({
 				interactions: { 
 					editable: true, 
@@ -95,7 +108,7 @@ function TracksBoardUI() {
 			_.set_time_domain(domElement.d.start, domElement.d.start + domElement.d.duration)
 		});
 
-		d3.select(containerId).call(miniTimeline.draw);
+		d3.select("#"+containerId).call(miniTimeline.draw);
 	}
 
 	function create_time_ruler(containerId, width, height, domain) {
@@ -130,47 +143,42 @@ function TracksBoardUI() {
 			.attr('background', 'yellow')
 			.call(timeRulerAxis);
 
-		d3.select(containerId).call(miniTimeline.draw);
+		d3.select("#"+containerId).call(miniTimeline.draw);
 	}
 	
-	this.add_track = function (trackData) {
+	// params: id, type, height (opt)
+	this.add_track = function (params) {
 		var track = new TrackUI();
-		var td = trackData;
+		var td = params;
 
-		var domId = 'track-'+td.id+'-container';
-		d3.select('#'+masterContainerId).append('div').attr('id', domId);
+		var domId = get_track_container_id(td.id, td.type);
+		d3.select('#'+tracksContainerId).append('div').attr('id', domId);
 
 		track.init({
-			parentContainerId: domId,
-			id: td.id,
-			segments: [],
+			id: td.id, 
+			type: td.type, 
+			initialTimeDomain: initialTimeDomain, 
+			width: width, 
+			height: td.height || height, 
 			beatGrid: beatGrid, 
-			initialTimeDomain: initialTimeDomain,
-			width: width,
-			height: td.height,
-			minitimeline: false,
-			timeruler: false
+			parentContainerId: domId
 		});
-		tracks[td.id] = track;
-		d3.select('#'+domId).append('div').attr('id', 'track-'+td.id+'-controls');
-		d3.select('#'+domId).append('br');
 
-		track.add_event_listener('track:segment:add', defaultListeners['board:track:segment:add']);
-		track.add_event_listener('track:segment:update', defaultListeners['board:track:segment:update']);
-		track.add_event_listener('track:segment:delete', defaultListeners['board:track:segment:delete']);
-		track.add_event_listener('track:segment:drag_start', defaultListeners['board:track:segment:drag_start']);
-		track.add_event_listener('track:segment:drag', defaultListeners['board:track:segment:drag']);
-		track.add_event_listener('track:segment:drag_end', defaultListeners['board:track:segment:drag_end']);
+		tracks[td.id] = track;
+		d3.select('#'+domId).append('br');
+		d3.select('#'+domId).append('div').attr('id', 'track-'+td.id+'-controls');
 
 		this.emit('board:track:add', {input: td, track: track});
 
+		return track;
 	}
 
 	this.remove_track = function(id) {
-		this.emit('board:track:delete', {id: td});
-		var domId = 'track-'+td.id+'-container';
-		d3.remove('#'+domId);
+		var domId = get_track_container_id(tracks[id].get_id(), tracks[id].get_type());
+		tracks[id].destroy();
+		d3.select('#'+domId).remove();
 		delete tracks[id];
+		this.emit('board:track:delete', {id: id});
 	}
 
 	this.get_track = function(id) {
@@ -215,14 +223,29 @@ function TracksBoardUI() {
 		timeRulerUI.call(timeRulerAxis);
 	}
 
-
-	this.add_event_listener = function(eventType, callback) {
-		var Ls = listeners[eventType];
-		Ls[callback] = callback;
+	this.get_track_controls_dom = function(trackId) {
+		//TODO
 	}
 
-	this.remove_event_listener = function(eventType, callback) {
-		delete listeners[eventType][callback];
+
+	this.add_event_listener = function(eventType, callback, trackId) {
+		if (trackId) {
+			tracks[trackId].add_event_listener(eventType, callback);
+		} else if (eventType.search("element")==-1 && eventType.search("layer")==-1) {
+			var Ls = listeners[eventType];
+			Ls[callback] = callback;
+		} else {
+			for (var i in tracks)
+				tracks[trackId].add_event_listener(eventType, callback);
+		}
+		
+	}
+
+	this.remove_event_listener = function(eventType, callback, trackId) {
+		if (trackId) {
+			tracks[trackId].remove_event_listener(eventType, callback);
+		} else
+			delete listeners[eventType][callback];
 	}
 
 	this.emit = function(eventType, params) {
@@ -234,4 +257,47 @@ function TracksBoardUI() {
 		}
 	}
 
+	this.destroy = function() {
+		for (var i in tracks) 
+			tracks[i].destroy();
+
+		tracks = undefined;
+
+		d3 = undefined;
+
+		timeline = undefined;
+
+		miniTimeline = undefined;
+		scrollSegment = undefined;
+		timeRulerAxis = undefined;
+		timeRulerUIParentContainer = undefined;
+		timeRulerUI = undefined;
+
+		id = undefined;
+		beatGrid = undefined;
+		parentContainerId = undefined;
+		tracksContainerId = undefined;
+		miniTimelineContainerId = undefined;
+		timeRulerContainerId = undefined;
+
+		width = undefined;
+		height = undefined;
+
+		tracks = undefined;
+
+		listeners = undefined;
+
+		_ = undefined;
+	}
+
+
+	function get_id_prefix(id, type) { return type + "-tracks-board-" + id; }
+
+	function get_tracks_container_id(id, type) { return get_id_prefix(id, type) + "-tracks"; }
+
+	function get_mini_timeline_container_id(id, type) { return get_id_prefix(id, type) + "-miniTimeline"; }
+
+	function get_time_ruler_container_id(id, type) { return get_id_prefix(id, type) + "-timeRuler"; }
+
+	function get_track_container_id(id, type) { return get_id_prefix(id, type) + "-master-container";}
 }
